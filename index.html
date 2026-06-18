@@ -51,3 +51,31 @@
     </script>
 </body>
 </html>
+<script>
+    const CONTRACT_ADDRESS = "0xFc70093982B36BbC6b9B43750a43e36a320cBd66";
+    const ABI = [
+        {"inputs":[{"internalType":"address","name":"_receiver","type":"address"},{"internalType":"string","name":"_passwordHash","type":"string"},{"internalType":"uint256","name":"_duration","type":"uint256"},{"internalType":"address","name":"_tokenAddress","type":"address"},{"internalType":"uint256","name":"_amount","type":"uint256"}],"name":"createEscrow","outputs":[],"stateMutability":"payable","type":"function"}
+    ];
+
+    async function createEscrow() {
+        if (!window.ethereum) return alert("MetaMask yüklü değil!");
+        const provider = new ethers.providers.Web3Provider(window.ethereum);
+        const signer = provider.getSigner();
+        const contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
+
+        try {
+            const receiver = document.getElementById("receiverInput").value;
+            const amount = ethers.utils.parseEther(document.getElementById("amountInput").value);
+            const password = document.getElementById("passwordInput").value;
+            
+            alert("MetaMask açılıyor, onayı ver...");
+            // POL transferi için 0x0...0 adresini kullanıyoruz
+            const tx = await contract.createEscrow(receiver, password, 86400, "0x0000000000000000000000000000000000000000", amount, { value: amount });
+            await tx.wait();
+            alert("İşlem başarıyla blokzincirine yazıldı!");
+        } catch (err) {
+            console.error(err);
+            alert("İşlem başarısız: " + err.message);
+        }
+    }
+</script>
