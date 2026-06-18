@@ -6,76 +6,90 @@
     <style>
         :root { --bg-body: #0f172a; --card-bg: #1e293b; --text-main: #f8fafc; --accent: #0d9488; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg-body); display: flex; justify-content: center; padding: 50px; color: var(--text-main); }
-        .main-container { width: 950px; background: var(--card-bg); padding: 30px; border-radius: 16px; }
-        h1 { font-size: 18px; border-bottom: 1px solid #334155; padding-bottom: 20px; }
-        input { background: #334155; border: none; color: white; padding: 12px; width: 100%; margin-bottom: 10px; border-radius: 6px; }
-        button { background: var(--accent); color: white; padding: 12px; border: none; border-radius: 6px; width: 100%; font-weight: bold; cursor: pointer; }
+        .main-container { width: 950px; background: var(--card-bg); padding: 30px; border-radius: 16px; box-sizing: border-box; }
+        h1 { font-size: 18px; border-bottom: 1px solid #334155; padding-bottom: 20px; text-transform: uppercase; }
+        input { background: #334155; border: none; color: white; padding: 12px; width: 100%; margin-bottom: 15px; border-radius: 6px; box-sizing: border-box; font-size: 14px; }
+        input::placeholder { color: #94a3b8; }
+        button { background: var(--accent); color: white; padding: 14px; border: none; border-radius: 6px; width: 100%; font-weight: bold; font-size: 15px; cursor: pointer; transition: background 0.3s; }
+        button:hover { background: #0f766e; }
     </style>
 </head>
 <body>
     <div class="main-container">
         <h1>SAFE BRIDGE GLOBAL V4.1 | OPERASYON MERKEZİ</h1>
+        
         <input type="text" id="receiverInput" placeholder="Alıcı Cüzdan Adresi (0x...)">
-        <input type="text" id="amountInput" placeholder="Miktar (POL)">
-        <input type="text" id="passwordInput" placeholder="Güvenlik Şifresi">
+        <input type="number" step="0.01" id="amountInput" placeholder="Miktar (POL)">
+        <input type="password" id="passwordInput" placeholder="Güvenlik Şifresi">
+        
         <button onclick="createEscrow()">HAVUZU BAŞLAT (MOTOR AKTİF)</button>
     </div>
 
     <script src="https://cdn.ethers.io/lib/ethers-5.2.umd.min.js" type="application/javascript"></script>
+    
     <script>
+        // 1. KONTRAK BİLGİLERİ (Senin Fabrika Adresin ve Kullanım Kılavuzu)
         const CONTRACT_ADDRESS = "0xFc70093982B36BbC6b9B43750a43e36a320cBd66";
         const ABI = [
             {"inputs":[{"internalType":"address","name":"_receiver","type":"address"},{"internalType":"string","name":"_passwordHash","type":"string"},{"internalType":"uint256","name":"_duration","type":"uint256"},{"internalType":"address","name":"_tokenAddress","type":"address"},{"internalType":"uint256","name":"_amount","type":"uint256"}],"name":"createEscrow","outputs":[],"stateMutability":"payable","type":"function"}
         ];
 
+        // 2. İŞLEM FONKSİYONU
         async function createEscrow() {
-            if (!window.ethereum) return alert("MetaMask yüklü değil!");
-            const provider = new ethers.providers.Web3Provider(window.ethereum);
-            const signer = provider.getSigner();
-            const contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
-
             try {
-                const receiver = document.getElementById("receiverInput").value;
-                const amount = ethers.utils.parseEther(document.getElementById("amountInput").value);
-                const password = document.getElementById("passwordInput").value;
+                // A. MetaMask Yüklü mü Kontrolü
+                if (!window.ethereum) {
+                    alert("MetaMask bulunamadı! Lütfen tarayıcınıza MetaMask eklentisini kurun.");
+                    return;
+                }
+
+                // B. MetaMask'ı Bağlanmaya Zorlama (Eksik olan ve butonu susturan kısım buydu)
+                await window.ethereum.request({ method: 'eth_requestAccounts' });
                 
-                alert("MetaMask açılıyor, onayı ver...");
-                const tx = await contract.createEscrow(receiver, password, 86400, "0x0000000000000000000000000000000000000000", amount, { value: amount });
-                await tx.wait();
-                alert("İşlem başarıyla blokzincirine yazıldı!");
-            } catch (err) {
-                console.error(err);
-                alert("İşlem başarısız: " + err.message);
+                // C. Arayüzden Verileri Çekme
+                const receiver = document.getElementById("receiverInput").value.trim();
+                const amountInput = document.getElementById("amountInput").value.trim();
+                const password = document.getElementById("passwordInput").value.trim();
+
+                // Boş alan uyarısı
+                if(!receiver || !amountInput || !password) {
+                    alert("Lütfen işleme başlamadan önce tüm alanları doldurun.");
+                    return;
+                }
+
+                // D. Blokzinciri Bağlantısını Kurma
+                const provider = new ethers.providers.Web3Provider(window.ethereum);
+                const signer = provider.getSigner();
+                const contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
+
+                // Miktarı hesaplanabilir formata (Wei) çeviriyoruz
+                const amount = ethers.utils.parseEther(amountInput);
+                
+                // E. İşlemi Blokzincirine Gönderme
+                alert("MetaMask üzerinden işlemi onaylayın. Cüzdan penceresi açılıyor...");
+                
+                // createEscrow parametreleri: alıcı, şifre, 86400 saniye (1 gün), POL adresi(sıfır adresi), miktar
+                const tx = await contract.createEscrow(
+                    receiver, 
+                    password, 
+                    86400, 
+                    "0x0000000000000000000000000000000000000000", 
+                    amount, 
+                    { value: amount }
+                );
+
+                alert("İşlem başarıyla blokzincirine gönderildi! Onaylanması bekleniyor...");
+                
+                // İşlemin ağda onaylanmasını bekle
+                await tx.wait(); 
+                
+                alert("İşlem Başarılı! Emanet havuzu güvenle oluşturuldu.");
+                
+            } catch (error) {
+                console.error("Hata Detayı:", error);
+                alert("İşlem iptal edildi veya bir hata oluştu. MetaMask'ta yeterli POL (Amoy) olduğundan emin olun.");
             }
         }
     </script>
 </body>
 </html>
-<script>
-    const CONTRACT_ADDRESS = "0xFc70093982B36BbC6b9B43750a43e36a320cBd66";
-    const ABI = [
-        {"inputs":[{"internalType":"address","name":"_receiver","type":"address"},{"internalType":"string","name":"_passwordHash","type":"string"},{"internalType":"uint256","name":"_duration","type":"uint256"},{"internalType":"address","name":"_tokenAddress","type":"address"},{"internalType":"uint256","name":"_amount","type":"uint256"}],"name":"createEscrow","outputs":[],"stateMutability":"payable","type":"function"}
-    ];
-
-    async function createEscrow() {
-        if (!window.ethereum) return alert("MetaMask yüklü değil!");
-        const provider = new ethers.providers.Web3Provider(window.ethereum);
-        const signer = provider.getSigner();
-        const contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
-
-        try {
-            const receiver = document.getElementById("receiverInput").value;
-            const amount = ethers.utils.parseEther(document.getElementById("amountInput").value);
-            const password = document.getElementById("passwordInput").value;
-            
-            alert("MetaMask açılıyor, onayı ver...");
-            // POL transferi için 0x0...0 adresini kullanıyoruz
-            const tx = await contract.createEscrow(receiver, password, 86400, "0x0000000000000000000000000000000000000000", amount, { value: amount });
-            await tx.wait();
-            alert("İşlem başarıyla blokzincirine yazıldı!");
-        } catch (err) {
-            console.error(err);
-            alert("İşlem başarısız: " + err.message);
-        }
-    }
-</script>
