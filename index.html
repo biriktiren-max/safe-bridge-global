@@ -6,40 +6,48 @@
     <style>
         :root { --bg-body: #0f172a; --card-bg: #1e293b; --text-main: #f8fafc; --accent: #0d9488; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg-body); display: flex; justify-content: center; padding: 50px; color: var(--text-main); }
-        .main-container { width: 950px; background: #0f172a; padding: 30px; border-radius: 16px; }
-        h1 { font-size: 18px; font-weight: 300; letter-spacing: 2px; margin-bottom: 30px; border-bottom: 1px solid #334155; padding-bottom: 20px; }
-        .dashboard { display: grid; grid-template-columns: 300px 1fr; gap: 30px; }
-        .card { background: var(--card-bg); padding: 25px; border-radius: 12px; border: 1px solid #334155; }
-        h2 { font-size: 11px; margin-bottom: 20px; opacity: 0.7; }
-        input, select { background: #334155; border: none; color: white; padding: 12px; border-radius: 6px; width: 100%; margin-bottom: 10px; }
-        button { background: var(--accent); color: white; border: none; padding: 12px; border-radius: 6px; width: 100%; font-weight: bold; cursor: pointer; }
-        .timer-box { background: #064e3b; color: #5eead4; padding: 15px; border-radius: 8px; text-align: center; font-size: 22px; margin-top: 15px; }
-        table { width: 100%; border-collapse: collapse; font-size: 12px; }
-        th { color: #94a3b8; text-align: left; padding: 10px; }
-        td { padding: 10px; border-bottom: 1px solid #334155; }
+        .main-container { width: 950px; background: var(--card-bg); padding: 30px; border-radius: 16px; }
+        h1 { font-size: 18px; border-bottom: 1px solid #334155; padding-bottom: 20px; }
+        input { background: #334155; border: none; color: white; padding: 12px; width: 100%; margin-bottom: 10px; border-radius: 6px; }
+        button { background: var(--accent); color: white; padding: 12px; border: none; border-radius: 6px; width: 100%; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
-<div class="main-container">
-    <h1>SAFE BRIDGE GLOBAL V4.1 | PREMIUM OPERASYON MERKEZİ</h1>
-    <div class="dashboard">
-        <div class="card">
-            <h2>EMANET OPERASYONU</h2>
-            <select><option>POL (Ana Coin)</option></select>
-            <input type="text" placeholder="Miktar">
-            <div style="display:flex; gap:10px;"><input type="text" placeholder="Gün"><input type="text" placeholder="Saat"></div>
-            <button>HAVUZU BAŞLAT</button>
-            <div class="timer-box">05 gün 14:38:21</div>
-        </div>
-        <div class="card">
-            <h2>HAREKET GEÇMİŞİ & KAYIT DEFTERİ</h2>
-            <table>
-                <tr><th>ID</th><th>Adres</th><th>Miktar</th><th>Durum</th></tr>
-                <tr><td>1932</td><td>0x8A1b...</td><td>1.500</td><td style="color:var(--accent)">Aktif</td></tr>
-            </table>
-            <input type="text" placeholder="Adres Kaydet..." style="margin-top:20px;">
-        </div>
+    <div class="main-container">
+        <h1>SAFE BRIDGE GLOBAL V4.1 | OPERASYON MERKEZİ</h1>
+        <input type="text" id="receiverInput" placeholder="Alıcı Cüzdan Adresi (0x...)">
+        <input type="text" id="amountInput" placeholder="Miktar (POL)">
+        <input type="text" id="passwordInput" placeholder="Güvenlik Şifresi">
+        <button onclick="createEscrow()">HAVUZU BAŞLAT (MOTOR AKTİF)</button>
     </div>
-</div>
+
+    <script src="https://cdn.ethers.io/lib/ethers-5.2.umd.min.js" type="application/javascript"></script>
+    <script>
+        const CONTRACT_ADDRESS = "0xFc70093982B36BbC6b9B43750a43e36a320cBd66";
+        const ABI = [
+            {"inputs":[{"internalType":"address","name":"_receiver","type":"address"},{"internalType":"string","name":"_passwordHash","type":"string"},{"internalType":"uint256","name":"_duration","type":"uint256"},{"internalType":"address","name":"_tokenAddress","type":"address"},{"internalType":"uint256","name":"_amount","type":"uint256"}],"name":"createEscrow","outputs":[],"stateMutability":"payable","type":"function"}
+        ];
+
+        async function createEscrow() {
+            if (!window.ethereum) return alert("MetaMask yüklü değil!");
+            const provider = new ethers.providers.Web3Provider(window.ethereum);
+            const signer = provider.getSigner();
+            const contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
+
+            try {
+                const receiver = document.getElementById("receiverInput").value;
+                const amount = ethers.utils.parseEther(document.getElementById("amountInput").value);
+                const password = document.getElementById("passwordInput").value;
+                
+                alert("MetaMask açılıyor, onayı ver...");
+                const tx = await contract.createEscrow(receiver, password, 86400, "0x0000000000000000000000000000000000000000", amount, { value: amount });
+                await tx.wait();
+                alert("İşlem başarıyla blokzincirine yazıldı!");
+            } catch (err) {
+                console.error(err);
+                alert("İşlem başarısız: " + err.message);
+            }
+        }
+    </script>
 </body>
 </html>
