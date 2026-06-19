@@ -2,94 +2,113 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <title>Safe Bridge Global | Premium</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Safe Bridge Global | V3 Operasyon Merkezi</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
+    
     <style>
-        :root { --bg-body: #0f172a; --card-bg: #1e293b; --text-main: #f8fafc; --accent: #0d9488; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg-body); display: flex; justify-content: center; padding: 50px; color: var(--text-main); }
-        .main-container { width: 950px; background: var(--card-bg); padding: 30px; border-radius: 16px; box-sizing: border-box; }
-        h1 { font-size: 18px; border-bottom: 1px solid #334155; padding-bottom: 20px; text-transform: uppercase; }
-        input { background: #334155; border: none; color: white; padding: 12px; width: 100%; margin-bottom: 15px; border-radius: 6px; box-sizing: border-box; font-size: 14px; }
-        input::placeholder { color: #94a3b8; }
-        button { background: var(--accent); color: white; padding: 14px; border: none; border-radius: 6px; width: 100%; font-weight: bold; font-size: 15px; cursor: pointer; transition: background 0.3s; }
-        button:hover { background: #0f766e; }
+        body { background-color: #0f172a; color: white; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        .card-custom { background-color: #1e293b; border-radius: 10px; padding: 30px; width: 100%; max-width: 500px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3); }
+        .form-control { background-color: #2d3748; color: white; border: none; margin-bottom: 15px; padding: 12px; }
+        .form-control::placeholder { color: #a0aec0; }
+        .form-control:focus { background-color: #2d3748; color: white; box-shadow: none; border: 1px solid #3182ce; }
+        .btn-baslat { background-color: #047857; color: white; font-weight: bold; width: 100%; padding: 12px; }
+        .btn-baslat:hover { background-color: #065f46; color: white; }
+        .btn-teslim { background-color: #3182ce; color: white; font-weight: bold; width: 100%; padding: 12px; }
+        .btn-teslim:hover { background-color: #2b6cb0; color: white; }
+        hr { border-color: #4a5568; margin: 25px 0; }
     </style>
 </head>
 <body>
-    <div class="main-container">
-        <h1>SAFE BRIDGE GLOBAL V4.1 | OPERASYON MERKEZİ</h1>
-        
-        <input type="text" id="receiverInput" placeholder="Alıcı Cüzdan Adresi (0x...)">
-        <input type="number" step="0.01" id="amountInput" placeholder="Miktar (POL)">
-        <input type="password" id="passwordInput" placeholder="Güvenlik Şifresi">
-        
-        <button onclick="createEscrow()">HAVUZU BAŞLAT (MOTOR AKTİF)</button>
-    </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js" type="application/javascript"></script>
-    
-    <script>
-        // 1. KONTRAK BİLGİLERİ (Senin Fabrika Adresin ve Kullanım Kılavuzu)
-        const CONTRACT_ADDRESS = "0xFc70093982B36BbC6b9B43750a43e36a320cBd66";
-        const ABI = [
-            {"inputs":[{"internalType":"address","name":"_receiver","type":"address"},{"internalType":"string","name":"_passwordHash","type":"string"},{"internalType":"uint256","name":"_duration","type":"uint256"},{"internalType":"address","name":"_tokenAddress","type":"address"},{"internalType":"uint256","name":"_amount","type":"uint256"}],"name":"createEscrow","outputs":[],"stateMutability":"payable","type":"function"}
-        ];
+<div class="card-custom">
+    <h4 class="text-center mb-4" style="font-weight: bold;">
+        SAFE BRIDGE GLOBAL <br>
+        <span style="font-size: 16px; color: #cbd5e1;">| V3 OPERASYON MERKEZİ</span>
+    </h4>
 
-        // 2. İŞLEM FONKSİYONU
-        async function createEscrow() {
-            try {
-                // A. MetaMask Yüklü mü Kontrolü
-                if (!window.ethereum) {
-                    alert("MetaMask bulunamadı! Lütfen tarayıcınıza MetaMask eklentisini kurun.");
-                    return;
-                }
+    <h6 style="color: #10b981;">1. EMANET KASASINI KUR</h6>
+    <input type="text" id="aliciAdres" class="form-control" placeholder="Alıcı Cüzdan Adresi (0x...)">
+    <input type="text" id="miktar" class="form-control" placeholder="Miktar (Örn: 0.001)">
+    <input type="text" id="kurulumSifre" class="form-control" placeholder="Bir Güvenlik Şifresi Belirle (Örn: 1234)">
+    <button id="baslatBtn" class="btn btn-baslat">KASAYI KİLİTLE (MOTOR AKTİF)</button>
 
-                // B. MetaMask'ı Bağlanmaya Zorlama (Eksik olan ve butonu susturan kısım buydu)
-                await window.ethereum.request({ method: 'eth_requestAccounts' });
-                
-                // C. Arayüzden Verileri Çekme
-                const receiver = document.getElementById("receiverInput").value.trim();
-                const amountInput = document.getElementById("amountInput").value.trim();
-                const password = document.getElementById("passwordInput").value.trim();
+    <hr>
 
-                // Boş alan uyarısı
-                if(!receiver || !amountInput || !password) {
-                    alert("Lütfen işleme başlamadan önce tüm alanları doldurun.");
-                    return;
-                }
+    <h6 style="color: #3b82f6;">2. KASAYI ALICIYA AÇ</h6>
+    <input type="number" id="islemIdInput" class="form-control" placeholder="İşlem ID Numarası (İlk işlem için 0 yazın)">
+    <input type="text" id="teslimSifre" class="form-control" placeholder="Kilidi Açmak İçin Şifreyi Girin">
+    <button id="teslimEtBtn" class="btn btn-teslim">EMANETİ TESLİM ET (SERBEST BIRAK)</button>
+</div>
 
-                // D. Blokzinciri Bağlantısını Kurma
-                const provider = new ethers.providers.Web3Provider(window.ethereum);
-                const signer = provider.getSigner();
-                const contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
+<script>
+    // Sizin verdiğiniz plaka (Adres) ve Benim çıkardığım şema (ABI)
+    const contractAddress = "0xFc70093982B36BbC6b9B43750a43e36a320cBd66"; 
+    const contractABI = [
+        "function createEscrow(address _receiver, string _passwordHash, uint256 _duration, address _tokenAddress, uint256 _amount) payable",
+        "function completeEscrow(uint256 _escrowId, string _password)",
+        "function escrowCounter() view returns (uint256)"
+    ];
 
-                // Miktarı hesaplanabilir formata (Wei) çeviriyoruz
-                const amount = ethers.utils.parseEther(amountInput);
-                
-                // E. İşlemi Blokzincirine Gönderme
-                alert("MetaMask üzerinden işlemi onaylayın. Cüzdan penceresi açılıyor...");
-                
-                // createEscrow parametreleri: alıcı, şifre, 86400 saniye (1 gün), POL adresi(sıfır adresi), miktar
-                const tx = await contract.createEscrow(
-                    receiver, 
-                    password, 
-                    86400, 
-                    "0x0000000000000000000000000000000000000000", 
-                    amount, 
-                    { value: amount }
-                );
+    // MOTORU ÇALIŞTIRMA (HAVUZU BAŞLAT)
+    document.getElementById("baslatBtn").addEventListener("click", async () => {
+        try {
+            if (!window.ethereum) return alert("MetaMask kablosu bağlı değil!");
+            await window.ethereum.request({ method: 'eth_requestAccounts' });
+            
+            const provider = new ethers.providers.Web3Provider(window.ethereum);
+            const signer = provider.getSigner();
+            const contract = new ethers.Contract(contractAddress, contractABI, signer);
 
-                alert("İşlem başarıyla blokzincirine gönderildi! Onaylanması bekleniyor...");
-                
-                // İşlemin ağda onaylanmasını bekle
-                await tx.wait(); 
-                
-                alert("İşlem Başarılı! Emanet havuzu güvenle oluşturuldu.");
-                
-            } catch (error) {
-                console.error("Hata Detayı:", error);
-                alert("İşlem iptal edildi veya bir hata oluştu. MetaMask'ta yeterli POL (Amoy) olduğundan emin olun.");
-            }
+            const alici = document.getElementById("aliciAdres").value;
+            const miktar = document.getElementById("miktar").value;
+            const sifre = document.getElementById("kurulumSifre").value;
+            
+            if (!alici || !miktar || !sifre) return alert("Lütfen alıcı adresi, miktar ve şifre girin!");
+
+            const amountInWei = ethers.utils.parseEther(miktar);
+            const duration = 3600; // 1 Saatlik zaman kilidi
+            const nullAddress = "0x0000000000000000000000000000000000000000"; // POL için boş adres
+
+            const tx = await contract.createEscrow(alici, sifre, duration, nullAddress, amountInWei, { value: amountInWei });
+            
+            alert("Yakıt ateşlendi! Lütfen MetaMask üzerinden işlemi onaylayın ve bekleyin...");
+            await tx.wait();
+            alert("İşlem Başarılı! Emanet kasanız güvenle oluşturuldu ve şifrelendi.");
+
+        } catch (error) {
+            console.error("Motor Arızası (Başlatma):", error);
+            alert("Hata oluştu! Bakiyenizi veya bilgileri kontrol edin.");
         }
-    </script>
+    });
+
+    // KASAYI AÇMA (TESLİMAT) İŞLEMİ
+    document.getElementById("teslimEtBtn").addEventListener("click", async () => {
+        try {
+            if (!window.ethereum) return alert("MetaMask kablosu bağlı değil!");
+            
+            const provider = new ethers.providers.Web3Provider(window.ethereum);
+            const signer = provider.getSigner();
+            const contract = new ethers.Contract(contractAddress, contractABI, signer);
+            
+            const islemId = document.getElementById("islemIdInput").value;
+            const sifre = document.getElementById("teslimSifre").value;
+            
+            if (!islemId || !sifre) return alert("Lütfen İşlem ID ve Şifreyi girin!");
+
+            const tx = await contract.completeEscrow(islemId, sifre); 
+            
+            alert("Şifre doğrulandı, teslimat komutu yola çıktı! MetaMask üzerinden onaylayın...");
+            await tx.wait();
+            alert("BÜYÜK BAŞARI! Kasa açıldı ve emanet alıcıya sağ salim teslim edildi.");
+            
+        } catch (error) {
+            console.error("Motor Arızası (Teslimat):", error);
+            alert("Hata oluştu! Şifreyi yanlış girmiş olabilirsiniz veya bu emanet zaten çekilmiş olabilir.");
+        }
+    });
+</script>
+
 </body>
 </html>
