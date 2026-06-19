@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Safe Bridge Global | V3 Operasyon Merkezi</title>
+    <title>Safe Bridge Global | V3.1 Operasyon Merkezi</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
     
     <style>
-        body { background-color: #0f172a; color: white; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        body { background-color: #0f172a; color: white; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; }
         .card-custom { background-color: #1e293b; border-radius: 10px; padding: 30px; width: 100%; max-width: 500px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3); }
         .form-control { background-color: #2d3748; color: white; border: none; margin-bottom: 15px; padding: 12px; }
         .form-control::placeholder { color: #a0aec0; }
@@ -17,6 +17,8 @@
         .btn-baslat:hover { background-color: #065f46; color: white; }
         .btn-teslim { background-color: #3182ce; color: white; font-weight: bold; width: 100%; padding: 12px; }
         .btn-teslim:hover { background-color: #2b6cb0; color: white; }
+        .btn-iade { background-color: #e53e3e; color: white; font-weight: bold; width: 100%; padding: 12px; }
+        .btn-iade:hover { background-color: #c53030; color: white; }
         hr { border-color: #4a5568; margin: 25px 0; }
     </style>
 </head>
@@ -25,38 +27,41 @@
 <div class="card-custom">
     <h4 class="text-center mb-4" style="font-weight: bold;">
         SAFE BRIDGE GLOBAL <br>
-        <span style="font-size: 16px; color: #cbd5e1;">| V3 OPERASYON MERKEZİ</span>
+        <span style="font-size: 16px; color: #cbd5e1;">| V3.1 OPERASYON MERKEZİ</span>
     </h4>
 
-    <h6 style="color: #10b981;">1. EMANET KASASINI KUR</h6>
+    <h6 style="color: #10b981;">1. EMANET KASASINI KUR (Zaman Kilidi: 1 Dk)</h6>
     <input type="text" id="aliciAdres" class="form-control" placeholder="Alıcı Cüzdan Adresi (0x...)">
     <input type="text" id="miktar" class="form-control" placeholder="Miktar (Örn: 0.001)">
-    <input type="text" id="kurulumSifre" class="form-control" placeholder="Bir Güvenlik Şifresi Belirle (Örn: 1234)">
-    <button id="baslatBtn" class="btn btn-baslat">KASAYI KİLİTLE (MOTOR AKTİF)</button>
+    <input type="text" id="kurulumSifre" class="form-control" placeholder="Bir Güvenlik Şifresi Belirle">
+    <button id="baslatBtn" class="btn btn-baslat">KASAYI KİLİTLE</button>
 
     <hr>
 
-    <h6 style="color: #3b82f6;">2. KASAYI ALICIYA AÇ</h6>
-    <input type="number" id="islemIdInput" class="form-control" placeholder="İşlem ID Numarası (İlk işlem için 0 yazın)">
-    <input type="text" id="teslimSifre" class="form-control" placeholder="Kilidi Açmak İçin Şifreyi Girin">
-    <button id="teslimEtBtn" class="btn btn-teslim">EMANETİ TESLİM ET (SERBEST BIRAK)</button>
+    <h6 style="color: #3b82f6;">2. KASAYI ALICIYA AÇ (Mutlu Son)</h6>
+    <input type="number" id="islemIdInput1" class="form-control" placeholder="İşlem ID Numarası">
+    <input type="text" id="teslimSifre" class="form-control" placeholder="Şifreyi Girin">
+    <button id="teslimEtBtn" class="btn btn-teslim">EMANETİ TESLİM ET</button>
+
+    <hr>
+
+    <h6 style="color: #fc8181;">3. SÜRE DOLDU - İADE AL (Tersine Mühendislik)</h6>
+    <input type="number" id="iadeIdInput" class="form-control" placeholder="İşlem ID Numarası">
+    <button id="iadeBtn" class="btn btn-iade">İŞLEMİ İPTAL ET VE İADE AL</button>
 </div>
 
 <script>
-    // Sizin verdiğiniz plaka (Adres) ve Benim çıkardığım şema (ABI)
     const contractAddress = "0xFc70093982B36BbC6b9B43750a43e36a320cBd66"; 
     const contractABI = [
         "function createEscrow(address _receiver, string _passwordHash, uint256 _duration, address _tokenAddress, uint256 _amount) payable",
         "function completeEscrow(uint256 _escrowId, string _password)",
+        "function refundEscrow(uint256 _escrowId)",
         "function escrowCounter() view returns (uint256)"
     ];
 
-    // MOTORU ÇALIŞTIRMA (HAVUZU BAŞLAT)
+    // 1. KASAYI KİLİTLE
     document.getElementById("baslatBtn").addEventListener("click", async () => {
         try {
-            if (!window.ethereum) return alert("MetaMask kablosu bağlı değil!");
-            await window.ethereum.request({ method: 'eth_requestAccounts' });
-            
             const provider = new ethers.providers.Web3Provider(window.ethereum);
             const signer = provider.getSigner();
             const contract = new ethers.Contract(contractAddress, contractABI, signer);
@@ -65,47 +70,59 @@
             const miktar = document.getElementById("miktar").value;
             const sifre = document.getElementById("kurulumSifre").value;
             
-            if (!alici || !miktar || !sifre) return alert("Lütfen alıcı adresi, miktar ve şifre girin!");
+            if (!alici || !miktar || !sifre) return alert("Eksik bilgi!");
 
             const amountInWei = ethers.utils.parseEther(miktar);
-            const duration = 3600; // 1 Saatlik zaman kilidi
-            const nullAddress = "0x0000000000000000000000000000000000000000"; // POL için boş adres
+            const duration = 60; // DİKKAT: Test için zaman kilidi 60 saniye yapıldı!
+            const nullAddress = "0x0000000000000000000000000000000000000000"; 
 
             const tx = await contract.createEscrow(alici, sifre, duration, nullAddress, amountInWei, { value: amountInWei });
-            
-            alert("Yakıt ateşlendi! Lütfen MetaMask üzerinden işlemi onaylayın ve bekleyin...");
+            alert("Yakıt ateşlendi! Onaylayın ve bekleyin...");
             await tx.wait();
-            alert("İşlem Başarılı! Emanet kasanız güvenle oluşturuldu ve şifrelendi.");
-
+            alert("İşlem Başarılı! Kasa kilitlendi. İade testi için 1 Dakika beklemelisiniz.");
         } catch (error) {
-            console.error("Motor Arızası (Başlatma):", error);
-            alert("Hata oluştu! Bakiyenizi veya bilgileri kontrol edin.");
+            console.error(error);
+            alert("Hata oluştu!");
         }
     });
 
-    // KASAYI AÇMA (TESLİMAT) İŞLEMİ
+    // 2. TESLİMAT
     document.getElementById("teslimEtBtn").addEventListener("click", async () => {
         try {
-            if (!window.ethereum) return alert("MetaMask kablosu bağlı değil!");
-            
             const provider = new ethers.providers.Web3Provider(window.ethereum);
             const signer = provider.getSigner();
             const contract = new ethers.Contract(contractAddress, contractABI, signer);
             
-            const islemId = document.getElementById("islemIdInput").value;
+            const islemId = document.getElementById("islemIdInput1").value;
             const sifre = document.getElementById("teslimSifre").value;
             
-            if (!islemId || !sifre) return alert("Lütfen İşlem ID ve Şifreyi girin!");
-
             const tx = await contract.completeEscrow(islemId, sifre); 
-            
-            alert("Şifre doğrulandı, teslimat komutu yola çıktı! MetaMask üzerinden onaylayın...");
+            alert("Onaylanıyor...");
             await tx.wait();
-            alert("BÜYÜK BAŞARI! Kasa açıldı ve emanet alıcıya sağ salim teslim edildi.");
-            
+            alert("Kasa açıldı, emanet teslim edildi.");
         } catch (error) {
-            console.error("Motor Arızası (Teslimat):", error);
-            alert("Hata oluştu! Şifreyi yanlış girmiş olabilirsiniz veya bu emanet zaten çekilmiş olabilir.");
+            console.error(error);
+            alert("Hata!");
+        }
+    });
+
+    // 3. İADE ALMA (YENİ MODÜL)
+    document.getElementById("iadeBtn").addEventListener("click", async () => {
+        try {
+            const provider = new ethers.providers.Web3Provider(window.ethereum);
+            const signer = provider.getSigner();
+            const contract = new ethers.Contract(contractAddress, contractABI, signer);
+            
+            const islemId = document.getElementById("iadeIdInput").value;
+            if (!islemId) return alert("Lütfen İşlem ID girin!");
+
+            const tx = await contract.refundEscrow(islemId); 
+            alert("İade komutu gönderildi! MetaMask üzerinden onaylayın...");
+            await tx.wait();
+            alert("BÜYÜK BAŞARI! Süre doldu, işlem iptal edildi ve paranız cüzdanınıza (Account 1) iade edildi.");
+        } catch (error) {
+            console.error(error);
+            alert("İade Başarısız! Bunun 2 sebebi olabilir:\n1. 60 saniyelik zaman kilidi henüz dolmamıştır.\n2. Bu ID zaten teslim edilmiş veya iade alınmıştır.");
         }
     });
 </script>
